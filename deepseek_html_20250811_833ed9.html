@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Telegram Stars Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://telegram.org/js/telegram-widget.js?22" 
+          data-telegram-login="School_Schedule_11B_BOT" 
+          data-size="large" 
+          data-onauth="onTelegramAuth(user)"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <style>
+    :root {
+      --tg-bg: #0f0f0f;
+      --tg-card: #1a1a1a;
+      --tg-primary: #2aabee;
+      --tg-text: #e6eaea;
+      --tg-secondary: #6b7b8d;
+    }
+    
+    body {
+      background: var(--tg-bg);
+      color: var(--tg-text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .telegram-bg {
+      background: var(--tg-primary);
+    }
+
+    .star-gold {
+      color: #FFD700;
+      text-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+    }
+
+    .fade-in {
+      animation: fadeIn 0.6s ease-in-out forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-delay-1 {
+      animation-delay: 0.1s;
+    }
+
+    .gift-card {
+      background: linear-gradient(145deg, #1a1a1a, #222222);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.3s;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .gift-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .telegram-btn {
+      background: var(--tg-primary);
+      color: white;
+      border-radius: 10px;
+      padding: 14px 20px;
+      font-weight: 500;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+      font-size: 16px;
+    }
+
+    .telegram-btn:hover {
+      background: #229edb;
+    }
+
+    .telegram-icon {
+      width: 24px;
+      height: 24px;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.14.141-.259.259-.374.261l.213-3.053 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.136-.954l11.566-4.458c.538-.196 1.006.128.832.941z'/%3E%3C/svg%3E") center no-repeat;
+    }
+  </style>
+</head>
+
+<body class="text-gray-100 font-sans">
+  <div class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="glass p-4 shadow-md">
+      <div class="container mx-auto flex justify-between items-center">
+        <div class="flex items-center">
+          <div class="bg-[#2aabee] w-8 h-8 rounded-lg flex items-center justify-center mr-3">
+            <i class="fas fa-star star-gold"></i>
+          </div>
+          <h1 class="text-xl font-bold">Telegram Stars</h1>
+        </div>
+        <div id="user-avatar" class="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center overflow-hidden hidden">
+          <img id="avatar-img" src="" alt="User Avatar" class="w-full h-full object-cover" />
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 container mx-auto p-4">
+      <!-- Auth Section -->
+      <section id="auth-section" class="glass rounded-xl p-8 text-center fade-in">
+        <div class="mb-8">
+          <div class="inline-block mb-6">
+            <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png" 
+                 alt="Gift" class="w-32 h-32 object-contain">
+          </div>
+          <h2 class="text-2xl font-bold text-gray-100 mb-3">Ваши звёзды и подарки</h2>
+          <p class="text-gray-400">Войдите через Telegram, чтобы получить доступ</p>
+        </div>
+        
+        <!-- Telegram Login Widget Container -->
+        <div id="telegram-login-container" class="mb-4"></div>
+        
+        <!-- Demo button for testing -->
+        <button id="demo-btn" class="glass text-gray-300 py-3 px-6 rounded-lg font-medium w-full hover:bg-[#222]">
+          Демо-вход (тест)
+        </button>
+      </section>
+
+      <!-- Profile Section -->
+      <section id="profile-section" class="hidden glass rounded-xl p-6 mb-6 fade-in animate-delay-1">
+        <div class="flex items-center mb-6">
+          <div class="w-16 h-16 rounded-full bg-gray-700 mr-4 overflow-hidden border border-gray-600">
+            <img id="profile-avatar" src="" alt="Profile" class="w-full h-full object-cover" />
+          </div>
+          <div>
+            <h2 id="profile-name" class="text-xl font-bold text-gray-100"></h2>
+            <p id="profile-username" class="text-gray-400"></p>
+          </div>
+        </div>
+
+        <!-- Stars Card -->
+        <div class="glass rounded-xl p-4 mb-4 border border-gray-700">
+          <div class="flex justify-between items-center">
+            <div>
+              <h3 class="font-medium text-gray-400 mb-1">Ваши звёзды</h3>
+              <div class="flex items-center">
+                <p id="stars-count" class="text-3xl font-bold mr-2">0</p>
+                <i class="fas fa-star star-gold text-xl"></i>
+              </div>
+            </div>
+            <div class="glass p-3 rounded-full">
+              <i class="fas fa-coins star-gold text-2xl"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Gifts Section -->
+        <div class="mb-4">
+          <h3 class="font-medium text-gray-300 mb-3">Ваши подарки</h3>
+          <div id="gifts-container" class="grid grid-cols-2 gap-3">
+            <!-- Gifts will be dynamically inserted here -->
+          </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div>
+          <h3 class="font-medium text-gray-300 mb-3">Последние операции</h3>
+          <div id="transactions-container" class="space-y-3">
+            <!-- Transactions will be dynamically inserted here -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Empty State -->
+      <section id="empty-state" class="hidden glass rounded-xl p-6 text-center fade-in">
+        <div class="mb-4">
+          <i class="fas fa-gift text-4xl text-pink-400 mb-3"></i>
+          <h3 class="text-xl font-medium text-gray-300">У вас пока нет подарков</h3>
+          <p class="text-gray-400 mt-1">Получайте звёзды за активность и открывайте новые подарки!</p>
+        </div>
+        <button class="telegram-bg text-white py-2 px-4 rounded-full text-sm font-medium">Как получить звёзды?</button>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="glass border-t border-gray-700 py-3">
+      <div class="container mx-auto px-4 text-center text-gray-500 text-sm">
+        <p>Telegram Stars Tracker © 2025</p>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const authSection = document.getElementById('auth-section');
+      const profileSection = document.getElementById('profile-section');
+      const emptyState = document.getElementById('empty-state');
+      const userAvatar = document.getElementById('user-avatar');
+      const avatarImg = document.getElementById('avatar-img');
+      const demoBtn = document.getElementById('demo-btn');
+      const loginContainer = document.getElementById('telegram-login-container');
+
+      // Telegram Auth Callback
+      window.onTelegramAuth = function(user) {
+        handleTelegramAuth(user);
+      };
+
+      // Initialize Telegram Login Widget
+      function initTelegramWidget() {
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = "https://telegram.org/js/telegram-widget.js?22";
+        script.setAttribute('data-telegram-login', 'School_Schedule_11B_BOT');
+        script.setAttribute('data-size', 'large');
+        script.setAttribute('data-radius', '20');
+        script.setAttribute('data-request-access', 'write');
+        script.setAttribute('data-onauth', 'onTelegramAuth(user)');
+        loginContainer.appendChild(script);
+      }
+
+      // Handle Telegram WebApp
+      if (window.Telegram && Telegram.WebApp) {
+        Telegram.WebApp.expand();
+
+        if (Telegram.WebApp.initDataUnsafe && Telegram.WebApp.initDataUnsafe.user) {
+          handleTelegramAuth(Telegram.WebApp.initDataUnsafe.user);
+        } else {
+          // Create custom Telegram login button for WebApp
+          const loginBtn = document.createElement('button');
+          loginBtn.className = 'telegram-btn mb-4';
+          loginBtn.innerHTML = '<div class="telegram-icon"></div> Продолжить с Telegram';
+          loginBtn.addEventListener('click', function () {
+            Telegram.WebApp.openTelegramLink('https://oauth.telegram.org/auth');
+          });
+          loginContainer.appendChild(loginBtn);
+        }
+      } else {
+        // Initialize widget for browser
+        initTelegramWidget();
+      }
+
+      // Demo Auth (for testing)
+      demoBtn.addEventListener('click', function() {
+        handleTelegramAuth({
+          id: 123456789,
+          first_name: 'Иван',
+          last_name: 'Иванов',
+          username: 'telegram_user',
+          photo_url: 'https://cdn-icons-png.flaticon.com/512/149/149071.png'
+        });
+      });
+
+      // Handle successful authentication
+      function handleTelegramAuth(user) {
+        authSection.classList.add('hidden');
+        
+        // Set user avatar
+        if (user.photo_url) {
+          avatarImg.src = user.photo_url;
+          userAvatar.classList.remove('hidden');
+        } else {
+          const initials = (user.first_name?.charAt(0) || '') + (user.last_name?.charAt(0) || '');
+          userAvatar.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-[#2aabee] text-white font-bold">${initials}</div>`;
+          userAvatar.classList.remove('hidden');
+        }
+
+        const profileAvatar = document.getElementById('profile-avatar');
+        const profileName = document.getElementById('profile-name');
+        const profileUsername = document.getElementById('profile-username');
+
+        if (user.photo_url) {
+          profileAvatar.src = user.photo_url;
+        }
+
+        let fullName = user.first_name || '';
+        if (user.last_name) fullName += ' ' + user.last_name;
+        profileName.textContent = fullName;
+
+        if (user.username) {
+          profileUsername.textContent = '@' + user.username;
+        } else {
+          profileUsername.textContent = 'Telegram ID: ' + user.id;
+        }
+
+        profileSection.classList.remove('hidden');
+        loadStarsAndGifts(user.id);
+      }
+
+      function loadStarsAndGifts(userId) {
+        const starsCount = Math.floor(Math.random() * 4900) + 100;
+        document.getElementById('stars-count').textContent = starsCount.toLocaleString();
+
+        const hasGifts = Math.random() > 0.5;
+        const giftsContainer = document.getElementById('gifts-container');
+        const transactionsContainer = document.getElementById('transactions-container');
+
+        if (hasGifts) {
+          giftsContainer.innerHTML = '';
+          
+          // Telegram-like gifts with modern design
+          const gifts = [
+            { id: 1, name: "Premium стикеры", value: 500, icon: "fas fa-sticky-note", color: "from-blue-500 to-purple-500" },
+            { id: 2, name: "Анимированная иконка", value: 300, icon: "fas fa-play-circle", color: "from-green-500 to-teal-500" },
+            { id: 3, name: "Эксклюзивный фон", value: 200, icon: "fas fa-image", color: "from-yellow-500 to-orange-500" },
+            { id: 4, name: "Золотая рамка", value: 1000, icon: "fas fa-square", color: "from-amber-500 to-yellow-500" }
+          ];
+
+          gifts.forEach(gift => {
+            const giftElement = document.createElement('div');
+            giftElement.className = 'gift-card p-4';
+            giftElement.innerHTML = `
+              <div class="flex items-center">
+                <div class="bg-gradient-to-r ${gift.color} w-12 h-12 rounded-lg flex items-center justify-center mr-3">
+                  <i class="${gift.icon} text-white text-lg"></i>
+                </div>
+                <div>
+                  <h4 class="font-medium text-gray-100">${gift.name}</h4>
+                  <p class="text-sm text-gray-400">${gift.value} звёзд</p>
+                </div>
+              </div>
+            `;
+            giftsContainer.appendChild(giftElement);
+          });
+
+          const transactions = [
+            { id: 1, type: "received", amount: 50, description: "За активность в группе", date: "10 мин назад" },
+            { id: 2, type: "spent", amount: -100, description: "Покупка подарка", date: "2 часа назад" },
+            { id: 3, type: "received", amount: 200, description: "Бонус за подписку", date: "Вчера" }
+          ];
+
+          transactionsContainer.innerHTML = '';
+          transactions.forEach(trans => {
+            const transElement = document.createElement('div');
+            transElement.className = 'glass rounded-lg border border-gray-700 p-3';
+            transElement.innerHTML = `
+              <div class="flex justify-between items-center">
+                <div>
+                  <h4 class="font-medium text-gray-100">${trans.description}</h4>
+                  <p class="text-sm text-gray-400">${trans.date}</p>
+                </div>
+                <p class="${trans.type === 'received' ? 'text-green-400' : 'text-red-400'} font-medium">
+                  ${trans.type === 'received' ? '+' : ''}${trans.amount} <i class="fas fa-star star-gold"></i>
+                </p>
+              </div>
+            `;
+            transactionsContainer.appendChild(transElement);
+          });
+
+          emptyState.classList.add('hidden');
+        } else {
+          profileSection.classList.add('hidden');
+          emptyState.classList.remove('hidden');
+        }
+      }
+    });
+  </script>
+</body>
+</html>
