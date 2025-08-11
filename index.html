@@ -6,10 +6,6 @@
   <title>Telegram Stars Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
-  <script src="https://telegram.org/js/telegram-widget.js?22" 
-          data-telegram-login="EHTN05_bot" 
-          data-size="large" 
-          data-onauth="onTelegramAuth(user)"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   
   <style>
@@ -100,6 +96,21 @@
       height: 24px;
       background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cpath d='M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.14.141-.259.259-.374.261l.213-3.053 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.136-.954l11.566-4.458c.538-.196 1.006.128.832.941z'/%3E%3C/svg%3E") center no-repeat;
     }
+
+    .loader {
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-top: 4px solid #2aabee;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
   </style>
 </head>
 
@@ -178,6 +189,12 @@
           </div>
         </div>
 
+        <!-- Loading State -->
+        <div id="loading-state" class="hidden text-center py-8">
+          <div class="loader"></div>
+          <p class="mt-4 text-gray-400">Загрузка данных о подарках...</p>
+        </div>
+
         <!-- Recent Transactions -->
         <div>
           <h3 class="font-medium text-gray-300 mb-3">Последние операции</h3>
@@ -215,6 +232,9 @@
       const avatarImg = document.getElementById('avatar-img');
       const demoBtn = document.getElementById('demo-btn');
       const loginContainer = document.getElementById('telegram-login-container');
+      const loadingState = document.getElementById('loading-state');
+      const giftsContainer = document.getElementById('gifts-container');
+      const transactionsContainer = document.getElementById('transactions-container');
 
       // Telegram Auth Callback
       window.onTelegramAuth = function(user) {
@@ -269,6 +289,7 @@
       // Handle successful authentication
       function handleTelegramAuth(user) {
         authSection.classList.add('hidden');
+        profileSection.classList.remove('hidden');
         
         // Set user avatar
         if (user.photo_url) {
@@ -298,76 +319,102 @@
           profileUsername.textContent = 'Telegram ID: ' + user.id;
         }
 
-        profileSection.classList.remove('hidden');
+        // Load real stars and gifts
         loadStarsAndGifts(user.id);
       }
 
-      function loadStarsAndGifts(userId) {
-        const starsCount = Math.floor(Math.random() * 4900) + 100;
-        document.getElementById('stars-count').textContent = starsCount.toLocaleString();
-
-        const hasGifts = Math.random() > 0.5;
-        const giftsContainer = document.getElementById('gifts-container');
-        const transactionsContainer = document.getElementById('transactions-container');
-
-        if (hasGifts) {
+      // Функция для загрузки реальных данных
+      async function loadStarsAndGifts(userId) {
+        try {
+          // Показываем индикатор загрузки
+          loadingState.classList.remove('hidden');
           giftsContainer.innerHTML = '';
-          
-          // Telegram-like gifts with modern design
-          const gifts = [
-            { id: 1, name: "Premium стикеры", value: 500, icon: "fas fa-sticky-note", color: "from-blue-500 to-purple-500" },
-            { id: 2, name: "Анимированная иконка", value: 300, icon: "fas fa-play-circle", color: "from-green-500 to-teal-500" },
-            { id: 3, name: "Эксклюзивный фон", value: 200, icon: "fas fa-image", color: "from-yellow-500 to-orange-500" },
-            { id: 4, name: "Золотая рамка", value: 1000, icon: "fas fa-square", color: "from-amber-500 to-yellow-500" }
-          ];
-
-          gifts.forEach(gift => {
-            const giftElement = document.createElement('div');
-            giftElement.className = 'gift-card p-4';
-            giftElement.innerHTML = `
-              <div class="flex items-center">
-                <div class="bg-gradient-to-r ${gift.color} w-12 h-12 rounded-lg flex items-center justify-center mr-3">
-                  <i class="${gift.icon} text-white text-lg"></i>
-                </div>
-                <div>
-                  <h4 class="font-medium text-gray-100">${gift.name}</h4>
-                  <p class="text-sm text-gray-400">${gift.value} звёзд</p>
-                </div>
-              </div>
-            `;
-            giftsContainer.appendChild(giftElement);
-          });
-
-          const transactions = [
-            { id: 1, type: "received", amount: 50, description: "За активность в группе", date: "10 мин назад" },
-            { id: 2, type: "spent", amount: -100, description: "Покупка подарка", date: "2 часа назад" },
-            { id: 3, type: "received", amount: 200, description: "Бонус за подписку", date: "Вчера" }
-          ];
-
           transactionsContainer.innerHTML = '';
-          transactions.forEach(trans => {
-            const transElement = document.createElement('div');
-            transElement.className = 'glass rounded-lg border border-gray-700 p-3';
-            transElement.innerHTML = `
-              <div class="flex justify-between items-center">
-                <div>
-                  <h4 class="font-medium text-gray-100">${trans.description}</h4>
-                  <p class="text-sm text-gray-400">${trans.date}</p>
-                </div>
-                <p class="${trans.type === 'received' ? 'text-green-400' : 'text-red-400'} font-medium">
-                  ${trans.type === 'received' ? '+' : ''}${trans.amount} <i class="fas fa-star star-gold"></i>
-                </p>
-              </div>
-            `;
-            transactionsContainer.appendChild(transElement);
-          });
 
-          emptyState.classList.add('hidden');
-        } else {
-          profileSection.classList.add('hidden');
-          emptyState.classList.remove('hidden');
+          // Здесь должен быть реальный запрос к вашему бэкенду
+          // Для примера используем заглушку
+          const response = await fetchRealStarsData(userId);
+          
+          // Обновляем количество звёзд
+          document.getElementById('stars-count').textContent = 
+            response.stars.toLocaleString();
+          
+          // Показываем подарки
+          if (response.gifts.length > 0) {
+            response.gifts.forEach(gift => {
+              const giftElement = document.createElement('div');
+              giftElement.className = 'gift-card p-4';
+              giftElement.innerHTML = `
+                <div class="flex items-center">
+                  <div class="bg-gradient-to-r ${gift.color} w-12 h-12 rounded-lg flex items-center justify-center mr-3">
+                    <i class="${gift.icon} text-white text-lg"></i>
+                  </div>
+                  <div>
+                    <h4 class="font-medium text-gray-100">${gift.name}</h4>
+                    <p class="text-sm text-gray-400">${gift.value} звёзд</p>
+                  </div>
+                </div>
+              `;
+              giftsContainer.appendChild(giftElement);
+            });
+            
+            // Показываем транзакции
+            response.transactions.forEach(trans => {
+              const transElement = document.createElement('div');
+              transElement.className = 'glass rounded-lg border border-gray-700 p-3';
+              transElement.innerHTML = `
+                <div class="flex justify-between items-center">
+                  <div>
+                    <h4 class="font-medium text-gray-100">${trans.description}</h4>
+                    <p class="text-sm text-gray-400">${trans.date}</p>
+                  </div>
+                  <p class="${trans.type === 'received' ? 'text-green-400' : 'text-red-400'} font-medium">
+                    ${trans.type === 'received' ? '+' : ''}${trans.amount} <i class="fas fa-star star-gold"></i>
+                  </p>
+                </div>
+              `;
+              transactionsContainer.appendChild(transElement);
+            });
+            
+            emptyState.classList.add('hidden');
+          } else {
+            profileSection.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+          }
+        } catch (error) {
+          console.error('Ошибка загрузки данных:', error);
+          alert('Не удалось загрузить данные о звёздах и подарках');
+        } finally {
+          loadingState.classList.add('hidden');
         }
       }
+
+      // Заглушка для реального API
+      async function fetchRealStarsData(userId) {
+        // В реальном приложении здесь должен быть запрос к вашему серверу
+        // который взаимодействует с Telegram API
+        return new Promise(resolve => {
+          setTimeout(() => {
+            resolve({
+              stars: 2450,
+              gifts: [
+                { id: 1, name: "Premium стикеры", value: 500, icon: "fas fa-sticky-note", color: "from-blue-500 to-purple-500" },
+                { id: 2, name: "Анимированная иконка", value: 300, icon: "fas fa-play-circle", color: "from-green-500 to-teal-500" },
+              ],
+              transactions: [
+                { id: 1, type: "received", amount: 50, description: "За активность в группе", date: "10 мин назад" },
+                { id: 2, type: "spent", amount: -100, description: "Покупка подарка", date: "2 часа назад" },
+                { id: 3, type: "received", amount: 200, description: "Бонус за подписку", date: "Вчера" }
+              ]
+            });
+          }, 1500);
+        });
+      }
+
+      // Для реальной интеграции вам нужно:
+      // 1. Создать бэкенд (Node.js/PHP/Python)
+      // 2. Использовать Telegram API для получения данных о звёздах
+      // 3. Заменить fetchRealStarsData на реальный запрос к вашему API
     });
   </script>
 </body>
